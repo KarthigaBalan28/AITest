@@ -1,28 +1,62 @@
-- name: Generate PR Summary
-  id: summary
-  run: |
-    python - <<EOF
-    import os
-    import requests
+name: AI PR Summary
 
-    API_TOKEN = os.environ['HF_API_TOKEN']
-    headers = {"Authorization": f"Bearer {API_TOKEN}"}
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
 
-    diff_text = os.environ['PR_DIFF']
+jobs:
+  summarize-pr:
+    runs-on: ubuntu-latest
 
-    payload = {"inputs": f"Summarize this PR diff in simple terms:\n{diff_text}"}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    response = requests.post(
-        "https://api-inference.huggingface.co/models/google/flan-t5-large",
-        headers=headers,
-        json=payload
-    )
+      - name: Get PR Diff
+        id: diff
+        run: |
+          PR_DIFF=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "${{ github.event.pull_request.diff_url }}")
+          echo "PR_DIFF<<EOF" >> $GITHUB_ENV
+          echo "$PR_DIFF" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
-    summary = response.json()[0]['generated_text']
-    print(summary)
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
 
-    with open("summary.txt", "w") as f:
-        f.write(summary)
-    EOF
-  env:
-    HF_API_TOKEN: ${{ secrets.HF_API_TOKEN }}
+      - name: Generate PR Summary
+        id: summary
+        env:
+          HF_API_TOKEN: ${{ secrets.HF_API_TOKEN }}
+          PR_DIFF: ${{ env.PR_DIFF }}
+        run: |
+          python3 - <<'EOF'
+import os
+import requests
+
+API_TOKEN = os.environ['HF_API_TOKEN']
+headers = {"Authorization": f"Bearer {API_TOKEN}"}
+
+diff_text = os.environ['PR_DIFF']
+
+payload = {"inputs": f"Summarize this PR diff in simple terms:\n{diff_text}"}
+
+response = requests.post(
+    "https://api-inference.huggingface.co/models/google/flan-t5-large",
+    headers=headers,
+    json=payload
+)
+
+summary = response.json()[0]['generated_text']
+print(summary)
+
+with open("summary.txt", "w") as f:
+    f.write(summary)
+EOF
+
+      - name: Post summary as PR comment
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} --body "$(cat summary.txt)"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
