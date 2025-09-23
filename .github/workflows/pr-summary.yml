@@ -36,7 +36,6 @@ jobs:
           headers = {"Authorization": f"Bearer {API_TOKEN}"}
 
           diff_text = os.environ['PR_DIFF']
-
           payload = {"inputs": f"Summarize this PR diff in simple terms:\n{diff_text}"}
 
           response = requests.post(
@@ -45,9 +44,18 @@ jobs:
               json=payload
           )
 
-          summary = response.json()[0]['generated_text']
-          print(summary)
+          try:
+              response.raise_for_status()
+              data = response.json()
+              # Handle both error and success cases
+              if isinstance(data, list) and 'generated_text' in data[0]:
+                  summary = data[0]['generated_text']
+              else:
+                  summary = f"Unexpected API response: {data}"
+          except Exception as e:
+              summary = f"Failed to generate summary: {e}\nResponse content: {response.text}"
 
+          print(summary)
           with open("summary.txt", "w") as f:
               f.write(summary)
           EOF
