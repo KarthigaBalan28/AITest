@@ -27,33 +27,30 @@ jobs:
 
       - name: Generate PR Summary
         id: summary
-        env:
-          HF_API_TOKEN: ${{ secrets.HF_API_TOKEN }}
-          PR_DIFF: ${{ env.PR_DIFF }}
         run: |
-          python3 - <<'EOF'
-import os
-import requests
+          python - <<EOF
+          import os
+          import requests
 
-API_TOKEN = os.environ['HF_API_TOKEN']
-headers = {"Authorization": f"Bearer {API_TOKEN}"}
+          API_TOKEN = os.environ['HF_API_TOKEN']
+          headers = {"Authorization": f"Bearer {API_TOKEN}"}
 
-diff_text = os.environ['PR_DIFF']
+          diff_text = os.environ['PR_DIFF']
 
-payload = {"inputs": f"Summarize this PR diff in simple terms:\n{diff_text}"}
+          payload = {"inputs": f"Summarize this PR diff in simple terms:\n{diff_text}"}
 
-response = requests.post(
-    "https://api-inference.huggingface.co/models/google/flan-t5-large",
-    headers=headers,
-    json=payload
-)
+          response = requests.post(
+              "https://api-inference.huggingface.co/models/google/flan-t5-large",
+              headers=headers,
+              json=payload
+          )
 
-summary = response.json()[0]['generated_text']
-print(summary)
+          summary = response.json()[0]['generated_text']
+          print(summary)
 
-with open("summary.txt", "w") as f:
-    f.write(summary)
-EOF
+          with open("summary.txt", "w") as f:
+              f.write(summary)
+          EOF
 
       - name: Post summary as PR comment
         run: |
