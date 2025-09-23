@@ -1,0 +1,12 @@
+1. Create act code, and not aligning with the backend config
+
+2. Rename the username, 
+3. URLS to whitelist that are getting hit from SDK
+
+Create a Act Code Config - Act code policy needs to checked to align with IB requirement.
+DigiBank team should generate a Act code and sends it to email(IB responsibility)
+
+Renaming of the Username or externalID in Appliance
+Validating the CUSTPIN endpoint failure with 500 internal server error.
+
+Kindly update the project management chart accordingly.
