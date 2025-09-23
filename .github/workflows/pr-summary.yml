@@ -42,7 +42,7 @@ jobs:
           payload = {"inputs": f"Summarize this PR diff in simple terms:\n{diff_text}"}
 
           response = requests.post(
-              "https://api-inference.huggingface.co/models/google/flan-t5-large",
+              "https://api-inference.huggingface.co/models/google/flan-t5-xl",
               headers=headers,
               json=payload
           )
